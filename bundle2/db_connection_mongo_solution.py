@@ -23,11 +23,11 @@ def connect_database():
 
 
 def tokenize(text):
-    final = str.maketrans("", "", string.punctuation)
-    final = text.translate(final)
-    final = final.lower()
-    final = final.split()
-    return final
+    swap_table = str.maketrans("", "", string.punctuation)
+    tokens = text.translate(swap_table)
+    tokens = tokens.lower()
+    tokens = tokens.split()
+    return tokens
 
 
 def count_characters(word):
@@ -117,6 +117,19 @@ def get_index(col):
     document_index = col.aggregate(pipeline)
 
     if document_index:
-        return document_index
+        result = set()
+        entry = ""
+        for doc in document_index:
+            entry += (
+                "'"
+                + doc["terms"]["term"]
+                + "': '"
+                + doc["title"]
+                + ":"
+                + str(doc["terms"]["count"])
+                + "',"
+            )
+        result.add(entry)
+        return result
     else:
         return []
