@@ -61,8 +61,19 @@ if __name__ == "__main__":
         elif option == "d":
 
             index = get_index(documents)
+            result = set()
             for doc in index:
-                print(doc)
+                entry = (
+                    "'"
+                    + doc["terms"]["term"]
+                    + "': '"
+                    + doc["title"]
+                    + ":"
+                    + str(doc["terms"]["count"])
+                    + "'"
+                )
+                result.add(entry)
+            print(result)
 
         elif option == "q":
 
