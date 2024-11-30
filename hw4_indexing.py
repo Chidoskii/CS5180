@@ -62,9 +62,11 @@ def get_tfidf_value(pos, matrix, doc_id):
     return matrix[doc_id, pos]
 
 
-def build_reference_document_object(doc_id, tdidf):
+def update_reference_document_object(col, termid, doc_id, tdidf):
     reference = {doc_id: tdidf}
-    return reference
+    expression = {"$push": {"docs": reference}}
+
+    col.update_one({"_id": termid}, expression)
 
 
 db = connect_database()
@@ -98,13 +100,15 @@ vectorizer = CountVectorizer(analyzer="word", ngram_range=(1, 3))
 vectorizer.fit(document_collection)
 vector = vectorizer.transform(document_collection)
 term_dict = vectorizer.vocabulary_
-index = 1
-# for key in term_dict:
-#     id = index
-#     term = key
-#     pos = term_dict[key]
-#     create_term(terms, id, term, pos)
-#     index += 1
+length_of_vector = len(term_dict)
+index = 0
+for key in term_dict:
+    id = index
+    term = key
+    pos = term_dict[key]
+    docs = []
+    create_term(terms, id, term, pos, docs)
+    index += 1
 
 # retrieve the terms found in the corpora
 count_tokens = vectorizer.get_feature_names_out()
@@ -112,13 +116,18 @@ count_tokens = vectorizer.get_feature_names_out()
 tfidf_vector = TfidfTransformer()
 tfidf_vector.fit(vector)
 tfidf_matrix = tfidf_vector.transform(vector)
-print(get_pos(terms, "after"))
 
-# print(tfidf_matrix.shape)
-# print(
-#     pd.DataFrame(
-#         data=tfidf_matrix.toarray(),
-#         index=["Doc1", "Doc2", "Doc3", "Doc4"],
-#         columns=count_tokens,
-#     )
-# )
+print(length_of_vector)
+
+index = 0
+for doc in document_collection:
+    step = 0
+    for key in term_dict:
+        if check_document_for_term(key, doc):
+            position = get_pos(terms, key)
+            current_tfidf = get_tfidf_value(position, tfidf_matrix, index)
+            update_reference_document_object(
+                terms, str(step), str(index), current_tfidf
+            )
+        step += 1
+    index += 1
